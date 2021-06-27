@@ -1,102 +1,130 @@
-import java.io.*;
-import java.sql.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
 public class CsvParser {
 
 	static String jdbcURL = "jdbc:mysql://localhost:3306/sales";
 	static String username = "root";
 	static String password = "";
+	int count = 0;
 
-	public CsvParser() {
+	public CsvParser() throws IOException {
 		ArrayList<String> paths = new ArrayList<String>();
 		paths.add("D:\\workspace\\CvsParser\\csv\\simple1.csv");
-		paths.add("D:\\workspace\\CvsParser\\csv\\simple2.csv");
-		paths.add("D:\\workspace\\CvsParser\\csv\\simple3.csv");
-		paths.add("D:\\workspace\\CvsParser\\csv\\simple4.csv");
+
+		/*
+		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple2.csv");
+		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple3.csv");
+		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple4.csv");
+		 */
 
 		for (String filePath : paths) {
 			this.parseFileAndSaveToDB(filePath);
 		}
 	}
 
-	public void parseFileAndSaveToDB(String filePath) {
-		new Thread(new Runnable() {
+	public void parseFileAndSaveToDB(String filePath) throws IOException {
+		/*
+		 * new Thread(new Runnable() {
+		 *
+		 * @Override public void run() {
+		 */
 
-			@Override
-			public void run() {
-				int batchSize = 20;
-				Connection connection = null;
-				try {
+		long lineCount;
+		int count = 0;
+		Path path = Paths.get(filePath);
 
-					connection = DriverManager.getConnection(jdbcURL, username, password);
-					connection.setAutoCommit(false);
+		try (Stream<String> stream = Files.lines(path)) {
+			lineCount = stream.count() - 1;
+		}
 
-					String sql = "INSERT INTO review (course_name, student_name, timestamp, rating, comment) VALUES (?, ?, ?, ?, ?)";
-					PreparedStatement statement = connection.prepareStatement(sql);
+		int batchSize = 100;
+		Connection connection = null;
+		try {
+			connection = DriverManager.getConnection(jdbcURL, username, password);
+			connection.setAutoCommit(false);
+			String sql = "INSERT INTO review (course, name, date, rating, comment) VALUES (?, ?, ?, ?, ?)";
+			PreparedStatement pstm = connection.prepareStatement(sql);
 
-					BufferedReader lineReader = new BufferedReader(new FileReader(filePath));
-					String lineText = null;
+			long start = System.currentTimeMillis();
 
-					int count = 0;
-
-					lineReader.readLine(); // skip header line
-
-					while ((lineText = lineReader.readLine()) != null) {
-						String[] data = lineText.split(",");
-						String courseName = data[0];
-						String studentName = data[1];
-						String timestamp = data[2];
-						String rating = data[3];
-						String comment = data.length == 5 ? data[4] : "";
-
-						statement.setString(1, courseName);
-						statement.setString(2, studentName);
-
-						// Timestamp sqlTimestamp = Timestamp.valueOf(timestamp);
-						statement.setString(3, timestamp);
-
-						// Float fRating = Float.parseFloat(rating);
-						statement.setString(4, rating);
-
-						statement.setString(5, comment);
-
-						statement.addBatch();
-
-						if (count % batchSize == 0) {
-							statement.executeBatch();
-						}
-					}
-
-					lineReader.close();
-
-					// execute the remaining queries
-					statement.executeBatch();
-
-					connection.commit();
-					connection.close();
-
-				} catch (IOException ex) {
-					System.err.println(ex);
-				} catch (SQLException ex) {
-					ex.printStackTrace();
-
-					try {
-						connection.rollback();
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
+			Set<String> hset = Files.lines(path).collect(Collectors.toSet());
+			hset.remove("Course,Student,Date,Rating,Comment");
+			Iterator<String> it = hset.iterator();
+			it.next();
+			while (it.hasNext()) {
+				String[] data = it.next().split(",");
+				this.init(pstm, data);
+				if (count % batchSize == 0) {
+					pstm.executeBatch();
 				}
-
 			}
-		}).start();
+
+			pstm.executeBatch();
+			pstm.close();
+
+			connection.commit();
+			long finish = System.currentTimeMillis();
+			long duration = finish - start;
+			System.out
+					.println("durationInMillis : " + DurationFormatUtils.formatDuration(duration, "H:mm:ss:SSS", true));
+			connection.close();
+
+		} catch (IOException ex) {
+			System.err.println(ex);
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+
+			try {
+				connection.rollback();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		/*
+		 * } }).start();
+		 */
+	}
+
+	public void init(PreparedStatement pstm, String[] data) throws SQLException {
+		Review rev = new Review();
+
+		rev.setCourse_name(data[0]);
+		rev.setStudent_name(data[1]);
+		rev.setTimestamp(data[2]);
+		rev.setRating(data[3]);
+		rev.setComment(data.length == 5 ? data[4] : "");
+
+		pstm.setString(1, rev.getCourse_name());
+		pstm.setString(2, rev.getStudent_name());
+		pstm.setTimestamp(3, rev.getTimestamp());
+		pstm.setString(4, rev.getRating());
+		pstm.setString(5, rev.getComment());
+		pstm.addBatch();
 	}
 
 	public static void main(String[] args) {
-		new CsvParser();
+		try {
+			new CsvParser();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
+
 }
