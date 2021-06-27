@@ -1,5 +1,3 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,13 +24,11 @@ public class CsvParser {
 	public CsvParser() throws IOException {
 		ArrayList<String> paths = new ArrayList<String>();
 		paths.add("D:\\workspace\\CvsParser\\csv\\simple1.csv");
-
 		/*
 		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple2.csv");
 		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple3.csv");
 		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple4.csv");
 		 */
-
 		for (String filePath : paths) {
 			this.parseFileAndSaveToDB(filePath);
 		}
