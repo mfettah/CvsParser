@@ -68,6 +68,7 @@ public class CsvParser {
 				this.init(pstm, data);
 				if (count % batchSize == 0) {
 					pstm.executeBatch();
+					//pstm.clearParameters();//*********************
 				}
 			}
 
