@@ -63,9 +63,10 @@ public class CsvParser {
 
 			long start = System.currentTimeMillis();
 
-			Set<String> hset = Files.lines(path).collect(Collectors.toSet());
-			hset.remove("Course,Student,Date,Rating,Comment");
-			Iterator<String> it = hset.iterator();
+			Set<String> set = Files.lines(path).skip(1).collect(Collectors.toSet());
+			//set.remove("Course,Student,Date,Rating,Comment");
+			//
+			Iterator<String> it = set.iterator();
 			it.next();
 			while (it.hasNext()) {
 				String[] data = it.next().split(",");
