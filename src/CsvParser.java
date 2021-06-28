@@ -19,44 +19,41 @@ public class CsvParser {
 	static String jdbcURL = "jdbc:mysql://localhost:3306/sales";
 	static String username = "root";
 	static String password = "";
+	private static final String SQL_DELETE = "DELETE FROM review";
+	private static final String SQL_INSERT = "INSERT INTO review (course, name, date, rating, comment) VALUES (?, ?, ?, ?, ?)";
+
 	int count = 0;
+
 
 	public CsvParser() throws IOException {
 		ArrayList<String> paths = new ArrayList<String>();
 		paths.add("D:\\workspace\\CvsParser\\csv\\simple1.csv");
-		/*
-		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple2.csv");
-		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple3.csv");
-		 * paths.add("D:\\workspace\\CvsParser\\csv\\simple4.csv");
-		 */
 		for (String filePath : paths) {
 			this.parseFileAndSaveToDB(filePath);
 		}
 	}
 
 	public void parseFileAndSaveToDB(String filePath) throws IOException {
-		/*
-		 * new Thread(new Runnable() {
-		 *
-		 * @Override public void run() {
-		 */
-
 		long lineCount;
-		int count = 0;
+		long count = 0;
 		Path path = Paths.get(filePath);
-
+		//
+		long size=0;
 		try (Stream<String> stream = Files.lines(path)) {
-			lineCount = stream.count() - 1;
+			size = stream.count() - 1;
 		}
-
+		//
 		int batchSize = 100;
 		Connection connection = null;
 		try {
 			connection = DriverManager.getConnection(jdbcURL, username, password);
 			connection.setAutoCommit(false);
-			String sql = "INSERT INTO review (course, name, date, rating, comment) VALUES (?, ?, ?, ?, ?)";
-			PreparedStatement pstm = connection.prepareStatement(sql);
 
+			PreparedStatement pstm = connection.prepareStatement(SQL_DELETE);
+			pstm.executeUpdate();
+			connection.commit();
+
+			pstm = connection.prepareStatement(SQL_INSERT);
 			long start = System.currentTimeMillis();
 
 			Set<String> hset = Files.lines(path).collect(Collectors.toSet());
@@ -66,20 +63,19 @@ public class CsvParser {
 			while (it.hasNext()) {
 				String[] data = it.next().split(",");
 				this.init(pstm, data);
-				if (count % batchSize == 0) {
+				 if (++count % batchSize == 0 || count == size) {
 					pstm.executeBatch();
-					//pstm.clearParameters();//*********************
-				}
+					connection.commit();
+					pstm.clearParameters();
+				 }
 			}
 
 			pstm.executeBatch();
 			pstm.close();
 
-			connection.commit();
 			long finish = System.currentTimeMillis();
 			long duration = finish - start;
-			System.out
-					.println("durationInMillis : " + DurationFormatUtils.formatDuration(duration, "H:mm:ss:SSS", true));
+			System.out.println("durationInMillis : " + DurationFormatUtils.formatDuration(duration, "H:mm:ss:SSS", true));
 			connection.close();
 
 		} catch (IOException ex) {
@@ -93,10 +89,6 @@ public class CsvParser {
 				e.printStackTrace();
 			}
 		}
-
-		/*
-		 * } }).start();
-		 */
 	}
 
 	public void init(PreparedStatement pstm, String[] data) throws SQLException {
