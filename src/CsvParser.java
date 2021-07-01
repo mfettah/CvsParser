@@ -24,7 +24,6 @@ public class CsvParser {
 
 	int count = 0;
 
-
 	public CsvParser() throws IOException {
 		ArrayList<String> paths = new ArrayList<String>();
 		paths.add("D:\\workspace\\CvsParser\\csv\\simple1.csv");
@@ -69,10 +68,10 @@ public class CsvParser {
 					pstm.clearParameters();
 				 }
 			}
-
+			//
 			pstm.executeBatch();
 			pstm.close();
-
+			//
 			long finish = System.currentTimeMillis();
 			long duration = finish - start;
 			System.out.println("durationInMillis : " + DurationFormatUtils.formatDuration(duration, "H:mm:ss:SSS", true));
@@ -82,7 +81,6 @@ public class CsvParser {
 			System.err.println(ex);
 		} catch (SQLException ex) {
 			ex.printStackTrace();
-
 			try {
 				connection.rollback();
 			} catch (SQLException e) {
