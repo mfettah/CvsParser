@@ -33,7 +33,6 @@ public class CsvParser {
 
 	public void parseFileAndSaveToDB(String filePath) throws IOException {
 		long lineCount;
-		long count = 0;
 		Path path = Paths.get(filePath);
 		//
 		long size = 0;
