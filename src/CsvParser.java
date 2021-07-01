@@ -16,14 +16,12 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 
 public class CsvParser {
 
-	static String jdbcURL = "jdbc:mysql://localhost:3306/sales";
-	static String username = "root";
-	static String password = "";
+	private static final String jdbcURL = "jdbc:mysql://localhost:3306/sales";
+	private static final String username = "root";
+	private static final String password = "";
 	private static final String SQL_DELETE = "DELETE FROM review";
 	private static final String SQL_INSERT = "INSERT INTO review (course, name, date, rating, comment) VALUES (?, ?, ?, ?, ?)";
-
-	int count = 0;
-
+	private int count = 0;
 
 	public CsvParser() throws IOException {
 		ArrayList<String> paths = new ArrayList<String>();
@@ -38,7 +36,7 @@ public class CsvParser {
 		long count = 0;
 		Path path = Paths.get(filePath);
 		//
-		long size=0;
+		long size = 0;
 		try (Stream<String> stream = Files.lines(path)) {
 			size = stream.count() - 1;
 		}
@@ -63,11 +61,11 @@ public class CsvParser {
 			while (it.hasNext()) {
 				String[] data = it.next().split(",");
 				this.init(pstm, data);
-				 if (++count % batchSize == 0 || count == size) {
+				if (++count % batchSize == 0 || count == size) {
 					pstm.executeBatch();
 					connection.commit();
 					pstm.clearParameters();
-				 }
+				}
 			}
 
 			pstm.executeBatch();
@@ -75,7 +73,8 @@ public class CsvParser {
 
 			long finish = System.currentTimeMillis();
 			long duration = finish - start;
-			System.out.println("durationInMillis : " + DurationFormatUtils.formatDuration(duration, "H:mm:ss:SSS", true));
+			System.out
+					.println("durationInMillis : " + DurationFormatUtils.formatDuration(duration, "H:mm:ss:SSS", true));
 			connection.close();
 
 		} catch (IOException ex) {
