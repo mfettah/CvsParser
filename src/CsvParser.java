@@ -58,9 +58,10 @@ public class CsvParser {
 			Iterator<String> it = hset.iterator();
 			it.next();
 			while (it.hasNext()) {
+				count++;
 				String[] data = it.next().split(",");
 				this.init(pstm, data);
-				if (++count % batchSize == 0 || count == size) {
+				if (count % batchSize == 0 || count == size) {
 					pstm.executeBatch();
 					connection.commit();
 					pstm.clearParameters();
