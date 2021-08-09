@@ -22,6 +22,7 @@ public class CsvParser {
 	private static final String SQL_DELETE = "DELETE FROM review";
 	private static final String SQL_INSERT = "INSERT INTO review (course, name, date, rating, comment) VALUES (?, ?, ?, ?, ?)";
 	private int count = 0;
+	int y=0;
 
 	public CsvParser() throws IOException {
 		ArrayList<String> paths = new ArrayList<String>();
