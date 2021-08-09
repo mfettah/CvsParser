@@ -23,6 +23,7 @@ public class CsvParser {
 	private static final String SQL_INSERT = "INSERT INTO review (course, name, date, rating, comment) VALUES (?, ?, ?, ?, ?)";
 
 	int count = 0;
+	int x=0;
 
 
 	public CsvParser() throws IOException {
